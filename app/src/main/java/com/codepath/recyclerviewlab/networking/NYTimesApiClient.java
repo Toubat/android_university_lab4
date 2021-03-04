@@ -1,5 +1,7 @@
 package com.codepath.recyclerviewlab.networking;
 
+import android.util.Log;
+
 import com.codepath.recyclerviewlab.models.Article;
 import com.codepath.recyclerviewlab.models.NYTimesArticlesAPIResponse;
 
@@ -27,7 +29,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NYTimesApiClient {
 
     // TODO: Replace the below API key with your own generated key
-    private static final String API_KEY = "<YOUR-API-KEY-GOES-HERE>";
+    private static final String API_KEY = "egTuxt3JDUKpGnbnhxTjF2AnU7ACT44r";
 
     // returns the
     private static final String API_FILTER = "headline, web_url, snippet, pub_date, word_count, print_page, print_section, section_name";
@@ -76,6 +78,7 @@ public class NYTimesApiClient {
                 if (response.isSuccessful()) {
                     articlesListResponse.onSuccess(model.response.docs);
                 } else {
+                    Log.d("NYTimesApiClient",  "qasdad");
                     articlesListResponse.onFailure(new Throwable("error with response code " + response.code() + " " + response.message()));
                 }
             }
