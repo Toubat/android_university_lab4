@@ -30,9 +30,13 @@ import java.util.List;
  */
 public class ArticleResultFragment extends Fragment {
 
+    public static final String TAG = "ArticleResultFragment";
+
     private NYTimesApiClient client = new NYTimesApiClient();
     private RecyclerView recyclerView;
     private ContentLoadingProgressBar progressBar;
+    private EndlessRecyclerViewScrollListener scrollListener;
+    private String savedQuery;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -50,13 +54,11 @@ public class ArticleResultFragment extends Fragment {
                 loadNewArticlesByQuery(query);
                 return false;
             }
-
             @Override
             public boolean onQueryTextChange(String newText) {
                 return true;
             }
         });
-
     }
 
     @Override
@@ -71,11 +73,21 @@ public class ArticleResultFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_article_result_list, container, false);
         recyclerView = view.findViewById(R.id.list);
         progressBar = view.findViewById(R.id.progress);
-        progressBar.show();
+
         Context context = view.getContext();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context);
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(new ArticleResultsRecyclerViewAdapter());
+
+        scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                Log.i(TAG, "onLoadMore: " + page);
+                loadArticlesByPage(page);
+            }
+        };
+        // Adds the scroll listener to RecyclerView
+        recyclerView.addOnScrollListener(scrollListener);
 
         return view;
     }
@@ -96,6 +108,7 @@ public class ArticleResultFragment extends Fragment {
         Toast.makeText(getContext(), "Loading articles for \'" + query + "\'", Toast.LENGTH_SHORT).show();
         progressBar.show();
         // TODO(Checkpoint 3): Implement this method to populate articles
+        savedQuery = query;
         client.getArticlesByQuery(new CallbackResponse<List<Article>>() {
 
             @Override
@@ -118,5 +131,20 @@ public class ArticleResultFragment extends Fragment {
 
     private void loadArticlesByPage(final int page) {
         // TODO(Checkpoint 4): Implement this method to do infinite scroll
+        client.getArticlesByQuery(new CallbackResponse<List<Article>>() {
+            @Override
+            public void onSuccess(List<Article> models) {
+                ArticleResultsRecyclerViewAdapter adapter = (ArticleResultsRecyclerViewAdapter) recyclerView.getAdapter();
+                adapter.addArticles(models);
+                adapter.notifyDataSetChanged();
+                Log.d("ArticleResultFragment", String.format("Successfully loaded articles from page %d", page));
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+                Log.d("ArticleResultFragment", "Failure load article " + error.getMessage());
+                Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT);
+            }
+        }, savedQuery, page);
     }
 }
